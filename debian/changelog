@@ -1,3 +1,10 @@
+fonttools (4.65.0-1deepin1) unstable; urgency=medium
+
+  * Bootstrap for Python 3.14: drop python-fonttools-doc and test deps not
+    available yet (glyphslib, skia-pathops, ufo2ft, ufolib2, uharfbuzz).
+
+ -- purofle <purofle@gmail.com>  Tue, 17 Nov 2026 20:03:42 +0800
+
 fonttools (4.65.0-1) unstable; urgency=medium
 
   * Team upload.

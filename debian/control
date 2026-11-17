@@ -12,22 +12,16 @@ Build-Depends:
  python3-all-dev,
  python3-brotli (>= 1.1.0) <!nocheck>,
 # python3-glyphslib: optional test build-dependency
- python3-glyphslib (>= 6.9.4) [!i386] <!nocheck>,
  python3-lxml (>= 4.9.3) <!nocheck>,
  python3-pytest <!nocheck>,
  python3-munkres <!nocheck>,
  python3-setuptools,
 # Do not enable skia-pathops on big-endian and those without gn
- python3-skia-pathops (>= 0.5.0) [!s390x !alpha !hppa !hurd-any !m68k !powerpc !ppc64 !sh4 !sparc64 !x32] <!nocheck>,
- python3-ufo2ft (>= 3.3.1) [!i386] <!nocheck>,
- python3-ufolib2 (>= 0.18.1) <!nocheck>,
- python3-uharfbuzz <!nocheck>,
  python3-zopfli,
  sphinx-common,
  unicode-data (<< 18),
  unicode-data (>= 17),
 Build-Depends-Indep:
- python3-matplotlib <!nodoc>,
  python3-reportlab <!nodoc>,
  python3-sphinx <!nodoc>,
  python3-sphinx-rtd-theme <!nodoc>,
@@ -79,17 +73,3 @@ Description: ${source:Synopsis} (Executables)
  ${source:Extended-Description}
  .
  This provides the executables of fontTools package.
-
-Package: python-fonttools-doc
-Section: doc
-Architecture: all
-Multi-Arch: foreign
-Depends:
- ${misc:Depends},
- ${sphinxdoc:Depends},
-Build-Profiles: <!nodoc>
-Built-Using: ${sphinxdoc:Built-Using}
-Description: ${source:Synopsis} (Documentation)
- ${source:Extended-Description}
- .
- This is the sphinx documentation of the fontTools package.
