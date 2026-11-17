@@ -1,10 +1,17 @@
-from fontTools.cffLib import TopDict, PrivateDict, CharStrings
+import os
+import sys
+
+libdir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "Lib"
+)
+sys.path.insert(0, libdir)
+
+from fontTools.cffLib import TopDict, PrivateDict, CharStrings, CFFFontSet
 from fontTools.misc.testTools import parseXML, DataFilesHandler
 from fontTools.ttLib import TTFont
 import copy
-import os
-import sys
 import unittest
+from io import BytesIO
 
 
 class CffLibTest(DataFilesHandler):
@@ -14,8 +21,7 @@ class CffLibTest(DataFilesHandler):
         topDict.CharStrings.fromXML(
             None,
             None,
-            parseXML(
-                """
+            parseXML("""
             <CharString name=".notdef">
               endchar
             </CharString>
@@ -28,8 +34,7 @@ class CffLibTest(DataFilesHandler):
             <CharString name="baz"><!-- [-55.1, -55.1, 55.1, 55.1] -->
               -55.1 -55.1 rmoveto 110.2 hlineto 110.2 vlineto -110.2 hlineto endchar
             </CharString>
-        """
-            ),
+        """),
         )
 
         topDict.recalcFontBBox()
@@ -41,16 +46,14 @@ class CffLibTest(DataFilesHandler):
         topDict.CharStrings.fromXML(
             None,
             None,
-            parseXML(
-                """
+            parseXML("""
             <CharString name=".notdef">
               endchar
             </CharString>
             <CharString name="space">
               123 endchar
             </CharString>
-        """
-            ),
+        """),
         )
 
         topDict.recalcFontBBox()
@@ -117,6 +120,27 @@ class CffLibTest(DataFilesHandler):
         font2 = TTFont(save_path)
         glyphOrder = font2.getGlyphOrder()
         self.assertEqual(len(glyphOrder), len(set(glyphOrder)))
+
+    def test_reading_supplement_encoding(self):
+        cff_path = self.getpath("TestSupplementEncoding.cff")
+        topDict = None
+        with open(cff_path, "rb") as fontfile:
+            cff = CFFFontSet()
+            cff.decompile(fontfile, None)
+            topDict = cff[0]
+            self.assertEqual(topDict.Encoding[9], "space")
+            self.assertEqual(topDict.Encoding[32], "space")
+
+
+class CFFToCFF2Test(DataFilesHandler):
+    def test_conversion(self):
+        font_path = self.getpath("CFFToCFF2-1.otf")
+        font = TTFont(font_path)
+        from fontTools.cffLib.CFFToCFF2 import convertCFFToCFF2
+
+        convertCFFToCFF2(font)
+        f = BytesIO()
+        font.save(f)
 
 
 if __name__ == "__main__":

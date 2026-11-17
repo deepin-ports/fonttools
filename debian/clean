@@ -1,1 +1,11 @@
 Doc/_build
+Lib/fontTools/cu2qu/cu2qu.c
+Lib/fontTools/feaLib/lexer.c
+Lib/fontTools/misc/bezierTools.c
+Lib/fontTools/pens/momentsPen.c
+Lib/fontTools/qu2cu/qu2cu.c
+Lib/fontTools/ttLib/tables/__init__.py
+Lib/fontTools/unicodedata/Blocks.py
+Lib/fontTools/unicodedata/ScriptExtensions.py
+Lib/fontTools/unicodedata/Scripts.py
+Lib/fontTools/varLib/iup.c

@@ -10,7 +10,6 @@ from fontTools.merge.cmap import computeMegaCmap
 from fontTools.merge.util import *
 import logging
 
-
 log = logging.getLogger("fontTools.merge")
 
 
@@ -225,7 +224,7 @@ def merge(self, m, tables):
                 g.removeHinting()
             # Expand composite glyphs to load their
             # composite glyph names.
-            if g.isComposite() or g.isVarComposite():
+            if g.isComposite():
                 g.expand(table)
     return DefaultTable.merge(self, m, tables)
 
@@ -294,6 +293,8 @@ def merge(self, m, tables):
                 extractor.execute(c)
                 width = extractor.width
                 if width is not defaultWidthXToken:
+                    # The following will be wrong if the width is added
+                    # by a subroutine. Ouch!
                     c.program.pop(0)
                 else:
                     width = defaultWidthX
@@ -310,7 +311,6 @@ def merge(self, m, tables):
 
 @add_method(ttLib.getTableClass("cmap"))
 def merge(self, m, tables):
-    # TODO Handle format=14.
     if not hasattr(m, "cmap"):
         computeMegaCmap(m, tables)
     cmap = m.cmap
@@ -334,6 +334,18 @@ def merge(self, m, tables):
     cmapTable.cmap = cmapBmpOnly
     # ordered by platform then encoding
     self.tables.insert(0, cmapTable)
+
+    uvsDict = m.uvsDict
+    if uvsDict:
+        # format-14
+        uvsTable = module.cmap_classes[14](14)
+        uvsTable.platformID = 0
+        uvsTable.platEncID = 5
+        uvsTable.language = 0
+        uvsTable.cmap = {}
+        uvsTable.uvsDict = uvsDict
+        # ordered by platform then encoding
+        self.tables.insert(0, uvsTable)
     self.tableVersion = 0
     self.numSubTables = len(self.tables)
     return self

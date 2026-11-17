@@ -1,0 +1,39 @@
+From: "Dr. Tobias Quathamer" <toddy@debian.org>
+Date: Sun, 11 Jan 2026 14:01:13 +0100
+Subject: Skip test on i386.
+
+The test fails due to excess precision on that architecture, see
+https://wiki.debian.org/ArchitectureSpecificsMemo#i386
+
+On i386, the calculated value is 326.4999999999999 instead
+of the expected 326.49999999999994.
+
+Build log of the failing autopkgtest:
+https://ci.debian.net/packages/f/fonttools/testing/i386/67681284/
+---
+ Tests/cu2qu/cu2qu_test.py | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/Tests/cu2qu/cu2qu_test.py b/Tests/cu2qu/cu2qu_test.py
+index ef3524b..32eb93d 100644
+--- a/Tests/cu2qu/cu2qu_test.py
++++ b/Tests/cu2qu/cu2qu_test.py
+@@ -14,6 +14,7 @@
+ 
+ import collections
+ import math
++import platform
+ import unittest
+ import os
+ import json
+@@ -233,6 +234,10 @@ def test_cu2qu_degenerate_curve_with_collinear_points():
+         assert p1 == pytest.approx(p2), f"point {i} does not match"
+ 
+ 
++# https://wiki.debian.org/ArchitectureSpecificsMemo#i386
++@pytest.mark.skipif(
++    platform.machine().startswith("i686"), reason="Excess precision on i386"
++)
+ def test_cu2qu_complex_division_floating_point_precision():
+     # This test ensures that cu2qu produces identical results whether compiled with
+     # Cython or running in pure Python mode. The specific curves from Ojuju.glyphs

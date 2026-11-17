@@ -41,9 +41,7 @@ class LexerTest(unittest.TestCase):
         self.assertEqual(lex("@Vowel-sc"), [(Lexer.GLYPHCLASS, "Vowel-sc")])
         self.assertRaisesRegex(FeatureLibError, "Expected glyph class", lex, "@(a)")
         self.assertRaisesRegex(FeatureLibError, "Expected glyph class", lex, "@ A")
-        self.assertRaisesRegex(
-            FeatureLibError, "not be longer than 63 characters", lex, "@" + ("A" * 64)
-        )
+        self.assertEqual(lex("@" + ("A" * 600)), [(Lexer.GLYPHCLASS, "A" * 600)])
         self.assertRaisesRegex(
             FeatureLibError, "Glyph class names must consist of", lex, "@Ab:c"
         )
@@ -243,13 +241,11 @@ class IncludingLexerTest(unittest.TestCase):
             with open(
                 os.path.join(tmpdir, "included.fea"), "w", encoding="utf-8"
             ) as included:
-                included.write(
-                    """
+                included.write("""
                     feature kern {
                         pos A B -40;
                     } kern;
-                    """
-                )
+                    """)
             # change current folder to the temporary dir
             os.chdir(tmpdir)
             # instantiate a new lexer that includes the above file

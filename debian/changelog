@@ -1,3 +1,260 @@
+fonttools (4.65.0-1) unstable; urgency=medium
+
+  * Team upload.
+  * Drop optional unicodedata2 dependency. (Closes: #1143089)
+  * Set PYTHONPATH for docs build.
+  * autopkgtest: Install all Build-Depends.
+  * New upstream version 4.65.0. (Closes: #1148458)
+
+ -- Bastian Germann <bage@debian.org>  Thu, 15 Oct 2026 00:28:48 +0200
+
+fonttools (4.62.1-7) unstable; urgency=medium
+
+  * Team upload.
+  * Remove previous temporary changes.
+  * debian/tests/control: Recover to previous versions.
+  * debian/control: Let python3-fonttools breaks python3-glyphslib
+    (<< 6.12.7+ds-6) to avoid broken autopkgtest from being triggered.
+
+ -- Boyuan Yang <byang@debian.org>  Fri, 03 Apr 2026 20:34:46 -0400
+
+fonttools (4.62.1-6) unstable; urgency=medium
+
+  * Team upload.
+  * Further remove some (test-)build-dep: glyphslib, ufo2ft temporarily.
+    They should be added back later when fonttools builds on s390x.
+  * debian/tests/: Dropped for now. They should be added back later
+    when fonttools builds on s390x.
+
+ -- Boyuan Yang <byang@debian.org>  Fri, 03 Apr 2026 18:05:17 -0400
+
+fonttools (4.62.1-5) unstable; urgency=medium
+
+  * Team upload.
+  * Temporarily remove (build-)dependency on ufolib2 to break the
+    dependency loop in buildd. This change should be reverted with
+    the next upload.
+
+ -- Boyuan Yang <byang@debian.org>  Fri, 03 Apr 2026 13:16:03 -0400
+
+fonttools (4.62.1-4) unstable; urgency=medium
+
+  * Team upload.
+  * debian/control: Do not build-depends on python3-skia-pathops for
+    architectures that does not have working skia library.
+  * debian/control: Demote python3-skia-pathops dependency to Recommends:
+    field.
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 01 Apr 2026 20:53:52 -0400
+
+fonttools (4.62.1-3) unstable; urgency=medium
+
+  * Team upload.
+  * debian/control: Add python3-uharfbuzz and python3-skia-pathops
+    as build-dependency with <!nocheck> markers.
+  * debian/watch: Update to version 5.
+  * debian/rules: Enable full hardening.
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 01 Apr 2026 15:18:23 -0400
+
+fonttools (4.62.1-2) unstable; urgency=medium
+
+  * Team upload.
+  * debian/control: Build-depends on unicode-data (>> 17).
+  * Depend on skia-pathops.
+
+ -- Bastian Germann <bage@debian.org>  Wed, 01 Apr 2026 20:21:06 +0200
+
+fonttools (4.62.1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release. (Closes: #1131426)
+
+ -- Boyuan Yang <byang@debian.org>  Sun, 22 Mar 2026 13:10:06 -0400
+
+fonttools (4.61.1-4) unstable; urgency=medium
+
+  * Team upload
+  * Depend on uharfbuzz
+  * Clean build files (Closes: #1044525)
+
+ -- Bastian Germann <bage@debian.org>  Sun, 01 Mar 2026 17:07:23 +0100
+
+fonttools (4.61.1-3) unstable; urgency=medium
+
+  * Team upload.
+  * Fix wrong placement of @pytest.mark.skipif()
+
+ -- Dr. Tobias Quathamer <toddy@debian.org>  Mon, 12 Jan 2026 22:20:49 +0100
+
+fonttools (4.61.1-2) unstable; urgency=medium
+
+  * Team upload.
+  * Skip test on i386.
+    The test fails due to excess precision on that architecture, see
+    https://wiki.debian.org/ArchitectureSpecificsMemo#i386.
+    On i386, the calculated value is 326.4999999999999 instead
+    of the expected 326.49999999999994.
+
+ -- Dr. Tobias Quathamer <toddy@debian.org>  Sun, 11 Jan 2026 14:04:44 +0100
+
+fonttools (4.61.1-1) unstable; urgency=medium
+
+  * Team upload.
+
+  [ Dr. Tobias Quathamer ]
+  * New upstream version 4.61.1
+    - This release includes the fix for CVE-2025-66034. Closes: #1121605
+    - Refresh patch
+    - Remove patch, has been fixed upstream
+  * Update FSF address in d/copyright
+  * Remove Priority: optional from d/control
+  * Update Standards-Version to 4.7.3
+  * Depend on python3-ufolib2 (>= 0.18.1)
+  * Remove dependency on python3-fs (Closes: #1082582)
+
+  [ Debian Janitor ]
+  * Remove constraints unnecessary since buster (archived release)
+
+ -- Dr. Tobias Quathamer <toddy@debian.org>  Sun, 04 Jan 2026 17:34:24 +0100
+
+fonttools (4.57.0-3) unstable; urgency=medium
+
+  * Team upload
+  * Use munkres over scipy to get scipy out of key pkgs
+
+ -- Bastian Germann <bage@debian.org>  Tue, 25 Nov 2025 18:07:37 +0100
+
+fonttools (4.57.0-2) unstable; urgency=high
+
+  * Team upload
+
+  [ Jeremy Bícha ]
+  * Build with unicode-data 16
+
+  [ Alexandre Detiste ]
+  * apply Multi-Arch: hint
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Thu, 04 Sep 2025 14:25:36 -0400
+
+fonttools (4.57.0-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release.
+  * debian/patches/0004: Disable tests related to the new unicode
+    for now to fix autopkgtest.
+
+ -- Boyuan Yang <byang@debian.org>  Sat, 05 Apr 2025 15:52:02 -0400
+
+fonttools (4.55.8-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release.
+  * debian/control: Bump Standards-Version to 4.7.2.
+  * debian/control: Add missing ${sphinxdoc:Built-Using} to the
+    doc package.
+  * debian/control: Add build-dep and binary dependency to
+    python3-zopfli. (Closes: #1101435)
+
+ -- Boyuan Yang <byang@debian.org>  Mon, 31 Mar 2025 15:24:19 -0400
+
+fonttools (4.55.3-2) unstable; urgency=medium
+
+  * Team upload.
+  * debian/control: Mark glyphslib build-dep as <!nocheck>. (Closes: #1093538)
+
+ -- Boyuan Yang <byang@debian.org>  Sun, 19 Jan 2025 15:10:49 -0500
+
+fonttools (4.55.3-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release.
+  * debian/control: Drop useless dependency to python3-pkg-resources.
+    (Closes: #1083404)
+
+ -- Boyuan Yang <byang@debian.org>  Mon, 13 Jan 2025 12:22:25 -0500
+
+fonttools (4.55.0-3) unstable; urgency=medium
+
+  * Team upload
+  * Fix autopkgtest patch
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Wed, 20 Nov 2024 15:57:04 -0500
+
+fonttools (4.55.0-2) unstable; urgency=medium
+
+  * Team upload
+  * Don't require some build test dependencies on i386
+  * Add patch to skip new test that fails on i386 because of excess precision
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Wed, 20 Nov 2024 14:39:06 -0500
+
+fonttools (4.55.0-1) unstable; urgency=medium
+
+  * Team upload
+  * New upstream release
+  * Bump dependency versions
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Sat, 16 Nov 2024 13:24:39 -0500
+
+fonttools (4.54.1-4) unstable; urgency=medium
+
+  * Team upload.
+  * debian/patches/0002-keep-doctest-compatible-with-Unicode-15.1.patch:
+    Update patch to be compatible with Unicode 15.1.
+
+ -- Boyuan Yang <byang@debian.org>  Tue, 22 Oct 2024 19:09:01 -0400
+
+fonttools (4.54.1-3) unstable; urgency=medium
+
+  * Team upload.
+  * debian/: Apply "wrap-and-sort -abst".
+  * debian/control: Further tighten build-dep versions.
+  * debian/tests/control: Ditto.
+
+ -- Boyuan Yang <byang@debian.org>  Tue, 22 Oct 2024 15:13:36 -0400
+
+fonttools (4.54.1-2) unstable; urgency=medium
+
+  * Team upload.
+  * debian/control: Require unicode-data (<< 16) for now.
+  * debian/rules: Disallow test failures again.
+  * debian/patches/0002-keep-doctest-compatible-with-Unicode-15.1.patch:
+    Add patch to keep tests compatible with unicode 15.1 for now.
+    Once Debian packages unicode-data (>= 16.0), this patch should be
+    dropped.
+
+ -- Boyuan Yang <byang@debian.org>  Sat, 19 Oct 2024 21:20:54 -0400
+
+fonttools (4.54.1-1) unstable; urgency=medium
+
+  * Team upload.
+  * Upload to unstable.
+
+ -- Boyuan Yang <byang@debian.org>  Sat, 19 Oct 2024 17:53:41 -0400
+
+fonttools (4.54.1-1~exp1) experimental; urgency=medium
+
+  * Team upload.
+  * New upstream release.
+  * Upload to experimental due to failed doctest.
+  * debian/control: Add new build-dependencies:
+    + python3-glyphslib (optional)
+    + python3-ufo2ft (>= 3.2.7) <!nocheck>
+  * debian/control: Bump Standards-Version to 4.7.0.
+
+ -- Boyuan Yang <byang@debian.org>  Wed, 16 Oct 2024 20:48:44 -0400
+
+fonttools (4.51.0-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release.
+  * debian/gbp.conf: Use "ignore-branch = True".
+  * debian/control:
+    + Move main package description to the source package.
+
+ -- Boyuan Yang <byang@debian.org>  Sat, 06 Apr 2024 19:57:57 -0400
+
 fonttools (4.46.0-1) unstable; urgency=medium
 
   * Team upload

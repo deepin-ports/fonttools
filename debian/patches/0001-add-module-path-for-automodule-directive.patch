@@ -7,7 +7,7 @@ Subject: add module path for automodule directive
  1 file changed, 2 insertions(+)
 
 diff --git a/Doc/source/conf.py b/Doc/source/conf.py
-index 82a5d57..8dcb774 100644
+index 4879ab3..1889bc7 100644
 --- a/Doc/source/conf.py
 +++ b/Doc/source/conf.py
 @@ -20,6 +20,8 @@

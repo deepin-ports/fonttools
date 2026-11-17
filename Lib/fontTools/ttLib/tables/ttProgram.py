@@ -1,4 +1,5 @@
 """ttLib.tables.ttProgram.py -- Assembler/disassembler for TrueType bytecode programs."""
+
 from __future__ import annotations
 
 from fontTools.misc.textTools import num2binary, binary2num, readHex, strjoin
@@ -7,7 +8,6 @@ from io import StringIO
 from typing import List
 import re
 import logging
-
 
 log = logging.getLogger(__name__)
 
@@ -156,7 +156,7 @@ instructions = [
 # fmt: on
 
 
-def bitRepr(value, bits):
+def bitRepr(value: int, bits: int) -> str:
     s = ""
     for i in range(bits):
         s = "01"[value & 0x1] + s
@@ -167,7 +167,9 @@ def bitRepr(value, bits):
 _mnemonicPat = re.compile(r"[A-Z][A-Z0-9]*$")
 
 
-def _makeDict(instructionList):
+def _makeDict(
+    instructionList: list[tuple[int, str, int, str, int, int]],
+) -> tuple[dict, dict]:
     opcodeDict = {}
     mnemonicDict = {}
     for op, mnemonic, argBits, name, pops, pushes in instructionList:
@@ -187,10 +189,10 @@ opcodeDict, mnemonicDict = _makeDict(instructions)
 
 
 class tt_instructions_error(Exception):
-    def __init__(self, error):
+    def __init__(self, error: str) -> None:
         self.error = error
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "TT instructions error: %s" % repr(self.error)
 
 
@@ -204,18 +206,18 @@ _whiteRE = re.compile(r"\s*")
 
 _pushCountPat = re.compile(r"[A-Z][A-Z0-9]*\s*\[.*?\]\s*/\* ([0-9]+).*?\*/")
 
-_indentRE = re.compile(r"^FDEF|IF|ELSE\[ \]\t.+")
+_indentRE = re.compile(r"^FDEF|IDEF|IF|ELSE\[ \]\t.+")
 _unindentRE = re.compile(r"^ELSE|ENDF|EIF\[ \]\t.+")
 
 
-def _skipWhite(data, pos):
+def _skipWhite(data: str, pos: int) -> int:
     m = _whiteRE.match(data, pos)
     newPos = m.regs[0][1]
     assert newPos >= pos
     return newPos
 
 
-class Program(object):
+class Program:
     def __init__(self) -> None:
         pass
 
@@ -224,7 +226,7 @@ class Program(object):
         if hasattr(self, "assembly"):
             del self.assembly
 
-    def fromAssembly(self, assembly: List[str] | str) -> None:
+    def fromAssembly(self, assembly: list[str] | str) -> None:
         if isinstance(assembly, list):
             self.assembly = assembly
         elif isinstance(assembly, str):

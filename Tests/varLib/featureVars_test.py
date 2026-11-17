@@ -21,6 +21,8 @@ def makeVariableFont(glyphOrder, axes):
         axis.minimum, axis.default, axis.maximum = minimum, default, maximum
         ds_axes[axisTag] = axis
     varLib._add_fvar(font, ds_axes, instances=())
+    os2 = font["OS/2"] = newTable("OS/2")
+    os2.usMaxContext = 0
     return font
 
 
@@ -35,7 +37,9 @@ def varfont():
 def test_addFeatureVariations(varfont):
     assert "GSUB" not in varfont
 
+    assert varfont["OS/2"].usMaxContext == 0
     addFeatureVariations(varfont, [([{"wght": (0.5, 1.0)}], {"A": "A.alt"})])
+    assert varfont["OS/2"].usMaxContext == 1
 
     assert "GSUB" in varfont
     gsub = varfont["GSUB"].table
@@ -131,6 +135,38 @@ def test_addFeatureVariations_new_feature(varfont):
     # the feature index for 'rvrn' feature table substitution record is now 1
     assert _substitution_features(gsub, rec_index=0) == [(1, "rvrn")]
     assert _substitution_features(gsub, rec_index=1) == [(0, "rclt")]
+
+
+def test_addFeatureVariations_existing_condition(varfont):
+    assert "GSUB" not in varfont
+
+    # Add a feature variation for 'ccmp' feature tag with a condition
+    addFeatureVariations(
+        varfont, [([{"wght": (0.5, 1.0)}], {"A": "A.alt"})], featureTag="ccmp"
+    )
+
+    gsub = varfont["GSUB"].table
+
+    # Should now have one feature record, one lookup, and one feature variation record
+    assert len(gsub.FeatureList.FeatureRecord) == 1
+    assert gsub.FeatureList.FeatureRecord[0].FeatureTag == "ccmp"
+    assert len(gsub.LookupList.Lookup) == 1
+    assert len(gsub.FeatureVariations.FeatureVariationRecord) == 1
+    assert _substitution_features(gsub, rec_index=0) == [(0, "ccmp")]
+
+    # Add a feature variation for 'rlig' feature tag with the same condition
+    addFeatureVariations(
+        varfont, [([{"wght": (0.5, 1.0)}], {"B": "B.alt"})], featureTag="rlig"
+    )
+
+    # Should now have two feature records, two lookups, and one feature variation
+    # record, since the condition is the same for both feature variations
+    assert len(gsub.FeatureList.FeatureRecord) == 2
+    assert gsub.FeatureList.FeatureRecord[0].FeatureTag == "ccmp"
+    assert gsub.FeatureList.FeatureRecord[1].FeatureTag == "rlig"
+    assert len(gsub.LookupList.Lookup) == 2
+    assert len(gsub.FeatureVariations.FeatureVariationRecord) == 1
+    assert _substitution_features(gsub, rec_index=0) == [(0, "ccmp"), (1, "rlig")]
 
 
 def _test_linear(n):

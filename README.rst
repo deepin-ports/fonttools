@@ -8,7 +8,7 @@ What is this?
   fonts to and from an XML text format, which is also called TTX. It
   supports TrueType, OpenType, AFM and to an extent Type 1 and some
   Mac-specific formats. The project has an `MIT open-source
-  licence <LICENSE>`__.
+  license <LICENSE>`__.
 | Among other things this means you can use it free of charge.
 
 `User documentation <https://fonttools.readthedocs.io/en/latest/>`_ and
@@ -18,7 +18,7 @@ are available at `Read the Docs <https://fonttools.readthedocs.io/>`_.
 Installation
 ~~~~~~~~~~~~
 
-FontTools requires `Python <http://www.python.org/download/>`__ 3.8
+FontTools requires `Python <http://www.python.org/download/>`__ 3.10
 or later. We try to follow the same schedule of minimum Python version support as
 NumPy (see `NEP 29 <https://numpy.org/neps/nep-0029-deprecation_policy.html>`__).
 
@@ -44,7 +44,7 @@ Python 3 `venv <https://docs.python.org/3/library/venv.html>`__ module.
     # create new virtual environment called e.g. 'fonttools-venv', or anything you like
     python -m virtualenv fonttools-venv
 
-    # source the `activate` shell script to enter the environment (Un*x); to exit, just type `deactivate`
+    # source the `activate` shell script to enter the environment (Unix-like); to exit, just type `deactivate`
     . fonttools-venv/bin/activate
 
     # to activate the virtual environment in Windows `cmd.exe`, do
@@ -81,18 +81,6 @@ are required to unlock the extra features named "ufo", etc.
 
   *Extra:* ``lxml``
 
-- ``Lib/fontTools/ufoLib``
-
-  Package for reading and writing UFO source files; it requires:
-
-  * `fs <https://pypi.org/pypi/fs>`__: (aka ``pyfilesystem2``) filesystem
-    abstraction layer.
-
-  * `enum34 <https://pypi.org/pypi/enum34>`__: backport for the built-in ``enum``
-    module (only required on Python < 3.4).
-
-  *Extra:* ``ufo``
-
 - ``Lib/fontTools/ttLib/woff2.py``
 
   Module to compress/decompress WOFF 2.0 web fonts; it requires:
@@ -121,7 +109,7 @@ are required to unlock the extra features named "ufo", etc.
 
   * `unicodedata2 <https://pypi.python.org/pypi/unicodedata2>`__:
     ``unicodedata`` backport for Python 3.x updated to the latest Unicode
-    version 15.0.
+    version 17.0.
 
   *Extra:* ``unicode``
 
@@ -136,7 +124,18 @@ are required to unlock the extra features named "ufo", etc.
     for Python, which internally uses `NumPy <https://pypi.python.org/pypi/numpy>`__
     arrays and hence is very fast;
   * `munkres <https://pypi.python.org/pypi/munkres>`__: a pure-Python
-    module that implements the Hungarian or Kuhn-Munkres algorithm.
+    module that implements the Hungarian or Kuhn-Munkres algorithm. Slower than
+    SciPy, but useful for minimalistic systems where adding SciPy is undesirable.
+
+  This ensures both performance (via SciPy) and minimal footprint (via Munkres)
+  are possible.
+
+  To plot the results to a PDF or HTML format, you also need to install:
+
+  * `pycairo <https://pypi.org/project/pycairo/>`__: Python bindings for the
+    Cairo graphics library. Note that wheels are currently only available for
+    Windows, for other platforms see pycairo's `installation instructions
+    <https://pycairo.readthedocs.io/en/latest/getting_started.html>`__.
 
   *Extra:* ``interpolatable``
 
@@ -172,11 +171,22 @@ are required to unlock the extra features named "ufo", etc.
 
   Simplify TrueType glyphs by merging overlapping contours and components.
 
-  * `skia-pathops <https://pypi.python.org/pypy/skia-pathops>`__: Python
+  * `skia-pathops <https://pypi.python.org/pypi/skia-pathops>`__: Python
     bindings for the Skia library's PathOps module, performing boolean
     operations on paths (union, intersection, etc.).
 
   *Extra:* ``pathops``
+
+- ``Lib/fontTools/ufoLib``
+
+  Package for reading and writing UFO source files; if available, it will use:
+
+  * `fs <https://pypi.org/pypi/fs>`__: (aka ``pyfilesystem2``) filesystem abstraction layer
+
+  for reading and writing UFOs to the local filesystem or zip files (.ufoz), instead of
+  the built-in ``fontTools.misc.filesystem`` package.
+  The reader and writer classes can in theory also accept any object compatible the
+  ``fs.base.FS`` interface, although not all have been tested.
 
 - ``Lib/fontTools/pens/cocoaPen.py`` and ``Lib/fontTools/pens/quartzPen.py``
 
@@ -225,7 +235,8 @@ How to make a new release
 2) Use semantic versioning to decide whether the new release will be a 'major',
    'minor' or 'patch' release. It's usually one of the latter two, depending on
    whether new backward compatible APIs were added, or simply some bugs were fixed.
-3) Run ``python setup.py release`` command from the tip of the ``main`` branch.
+3) From inside a venv, first do ``pip install -r dev-requirements.txt``, then run
+   the ``python setup.py release`` command from the tip of the ``main`` branch.
    By default this bumps the third or 'patch' digit only, unless you pass ``--major``
    or ``--minor`` to bump respectively the first or second digit.
    This bumps the package version string, extracts the changes since the latest
@@ -247,7 +258,7 @@ How to make a new release
    automate that too.
 
 
-Acknowledgements
+Acknowledgments
 ~~~~~~~~~~~~~~~~
 
 In alphabetical order:
@@ -258,7 +269,7 @@ Vincent Connare, David Corbett, Simon Cozens, Dave Crossland, Simon Daniels,
 Peter Dekkers, Behdad Esfahbod, Behnam Esfahbod, Hannes Famira, Sam Fishman,
 Matt Fontaine, Takaaki Fuji, Rob Hagemans, Yannis Haralambous, Greg Hitchcock,
 Jeremie Hornus, Khaled Hosny, John Hudson, Denis Moyogo Jacquerye, Jack Jansen,
-Tom Kacvinsky, Jens Kutilek, Antoine Leca, Werner Lemberg, Tal Leming, Peter
+Tom Kacvinsky, Jens Kutilek, Antoine Leca, Werner Lemberg, Tal Leming, Liang Hai, Peter
 Lofting, Cosimo Lupo, Olli Meier, Masaya Nakamura, Dave Opstad, Laurence Penney,
 Roozbeh Pournader, Garret Rieger, Read Roberts, Colin Rofls, Guido van Rossum,
 Just van Rossum, Andreas Seidel, Georg Seifert, Chris Simpkins, Miguel Sousa,

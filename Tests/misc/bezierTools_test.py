@@ -1,8 +1,11 @@
+import math
 import fontTools.misc.bezierTools as bezierTools
 from fontTools.misc.bezierTools import (
+    _is_linelike,
     calcQuadraticBounds,
     calcQuadraticArcLength,
     calcCubicBounds,
+    calcCubicArcLength,
     curveLineIntersections,
     curveCurveIntersections,
     segmentPointAtT,
@@ -143,6 +146,12 @@ def test_splitCubicAtT():
     ]
 
 
+def test_splitCubicAtT_robustness():
+    segment = ((-103, -231), (-61, -240), (-31.009, -245), (6, -245))
+    _, tail = splitCubicAtT(*segment, 0.386637)
+    assert tail[-1] == segment[-1]
+
+
 def test_solveCubic():
     assert solveCubic(1, 1, -6, 0) == [-3.0, -0.0, 2.0]
     assert solveCubic(-10.0, -9.0, 48.0, -29.0) == [-2.9, 1.0, 1.0]
@@ -192,8 +201,56 @@ def test_calcQuadraticArcLength():
     ) == pytest.approx(127.9225)
 
 
+@pytest.mark.parametrize(
+    "segment, expectedLength",
+    [
+        (
+            # https://github.com/fonttools/fonttools/issues/3502
+            ((377, 469), (377, 468), (377, 472), (377, 472)),  # off by one unit
+            3.32098765445,
+        ),
+        (
+            # https://github.com/fonttools/fonttools/issues/3502
+            ((242, 402), (242, 403), (242, 399), (242, 399)),  # off by one unit
+            3.32098765445,
+        ),
+        (
+            # https://github.com/fonttools/fonttools/issues/3514
+            (
+                (626.9918761593156, 1000.0),
+                (639.133178223544, 1000.0),
+                (650.1152019577394, 1000.0),
+                (626.9918761593156, 1000.0),
+            ),  # infinite recursion with Cython
+            27.06159516422008,
+        ),
+    ],
+)
+def test_calcCubicArcLength(segment, expectedLength):
+    assert calcCubicArcLength(*segment) == pytest.approx(expectedLength)
+
+
 def test_intersections_linelike():
     seg1 = [(0.0, 0.0), (0.0, 0.25), (0.0, 0.75), (0.0, 1.0)]
     seg2 = [(0.0, 0.5), (0.25, 0.5), (0.75, 0.5), (1.0, 0.5)]
     pt = curveCurveIntersections(seg1, seg2)[0][0]
     assert pt == (0.0, 0.5)
+
+
+# see https://github.com/fonttools/fonttools/issues/3962
+def test_linelike_curve_curve_regression():
+    seg1 = [(330, -1), (337, -1), (344, -1), (351, -1)]
+    seg2 = [(342, -13), (341, 57), (381, 146), (472, 151)]
+    assert _is_linelike(seg1)
+    assert not _is_linelike(seg2)
+
+    hits = curveCurveIntersections(seg1, seg2)
+    assert len(hits) == 1
+    hit = hits[0]
+    pt1 = segmentPointAtT(seg1, hit.t1)
+    pt2 = segmentPointAtT(seg2, hit.t2)
+
+    dist = math.dist(pt1, pt2)
+    # sanity check that the two points are approximately equal
+    # (before the fix, the dist was ~100)
+    assert abs(dist) < 0.001

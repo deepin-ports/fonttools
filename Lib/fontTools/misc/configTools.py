@@ -8,6 +8,7 @@ To create your own config system, you need to create an instance of
 ``options`` class variable set to your instance of Options.
 
 """
+
 from __future__ import annotations
 
 import logging
@@ -24,7 +25,6 @@ from typing import (
     Set,
     Union,
 )
-
 
 log = logging.getLogger(__name__)
 
@@ -223,7 +223,9 @@ class AbstractConfig(MutableMapping):
 
     def __init__(
         self,
-        values: Union[AbstractConfig, Dict[Union[Option, str], Any]] = {},
+        values: Union[
+            AbstractConfig, Dict[Union[Option, str], Any], Mapping[str, Any]
+        ] = {},
         parse_values: bool = False,
         skip_unknown: bool = False,
     ):

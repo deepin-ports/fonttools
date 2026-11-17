@@ -1,9 +1,7 @@
-""" fontTools.misc.classifyTools.py -- tools for classifying things.
-"""
+"""fontTools.misc.classifyTools.py -- tools for classifying things."""
 
 
 class Classifier(object):
-
     """
     Main Classifier object, used to classify things into similar sets.
     """

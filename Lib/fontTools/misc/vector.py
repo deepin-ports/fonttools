@@ -3,12 +3,10 @@ import math
 import operator
 import warnings
 
-
 __all__ = ["Vector"]
 
 
 class Vector(tuple):
-
     """A math-like vector.
 
     Represents an n-dimensional numeric vector. ``Vector`` objects support

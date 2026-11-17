@@ -155,6 +155,33 @@ def test_script():
 
 
 def test_script_extension():
+    assert unicodedata.script_extension("\u00b7") == {
+        "Avst",
+        "Cari",
+        "Copt",
+        "Dupl",
+        "Elba",
+        "Geor",
+        "Glag",
+        "Gong",
+        "Goth",
+        "Grek",
+        "Hani",
+        "Latn",
+        "Lydi",
+        "Mahj",
+        "Perm",
+        "Shaw",
+    }
+    assert unicodedata.script_extension("\u02bc") == {
+        "Beng",
+        "Cyrl",
+        "Deva",
+        "Latn",
+        "Lisu",
+        "Thai",
+        "Toto",
+    }
     assert unicodedata.script_extension("a") == {"Latn"}
     assert unicodedata.script_extension(chr(0)) == {"Zyyy"}
     assert unicodedata.script_extension(chr(0x0378)) == {"Zzzz"}
@@ -182,6 +209,7 @@ def test_script_extension():
         "Taml",
         "Telu",
         "Tirh",
+        "Onao",
     }
 
 
@@ -214,11 +242,11 @@ def test_script_code():
 
 def test_block():
     assert unicodedata.block("\x00") == "Basic Latin"
-    assert unicodedata.block("\x7F") == "Basic Latin"
+    assert unicodedata.block("\x7f") == "Basic Latin"
     assert unicodedata.block("\x80") == "Latin-1 Supplement"
     assert unicodedata.block("\u1c90") == "Georgian Extended"
     assert unicodedata.block("\u0870") == "Arabic Extended-B"
-    assert unicodedata.block("\U00011B00") == "Devanagari Extended-A"
+    assert unicodedata.block("\U00011b00") == "Devanagari Extended-A"
 
 
 def test_ot_tags_from_script():
@@ -266,6 +294,7 @@ def test_script_horizontal_direction():
     assert unicodedata.script_horizontal_direction("Arab") == "RTL"
     assert unicodedata.script_horizontal_direction("Thaa") == "RTL"
     assert unicodedata.script_horizontal_direction("Ougr") == "RTL"
+    assert unicodedata.script_horizontal_direction("Gara") == "RTL"
 
     with pytest.raises(KeyError):
         unicodedata.script_horizontal_direction("Azzz")

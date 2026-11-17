@@ -1,3 +1,9 @@
+"""
+designSpaceDocument
+
+- Read and write designspace files
+"""
+
 from __future__ import annotations
 
 import collections
@@ -14,12 +20,6 @@ from fontTools.misc import etree as ET
 from fontTools.misc import plistlib
 from fontTools.misc.loggingTools import LogMixin
 from fontTools.misc.textTools import tobytes, tostr
-
-"""
-    designSpaceDocument
-
-    - read and write designspace files
-"""
 
 __all__ = [
     "AxisDescriptor",
@@ -312,7 +312,7 @@ class SourceDescriptor(SimpleDescriptor):
         return self.designLocation
 
     @location.setter
-    def location(self, location: Optional[AnisotropicLocationDict]):
+    def location(self, location: Optional[SimpleLocationDict]):
         self.designLocation = location or {}
 
     def setFamilyName(self, familyName, languageCode="en"):
@@ -329,15 +329,13 @@ class SourceDescriptor(SimpleDescriptor):
         """
         return self.localisedFamilyName.get(languageCode)
 
-    def getFullDesignLocation(
-        self, doc: "DesignSpaceDocument"
-    ) -> AnisotropicLocationDict:
+    def getFullDesignLocation(self, doc: "DesignSpaceDocument") -> SimpleLocationDict:
         """Get the complete design location of this source, from its
         :attr:`designLocation` and the document's axis defaults.
 
         .. versionadded:: 5.0
         """
-        result: AnisotropicLocationDict = {}
+        result: SimpleLocationDict = {}
         for axis in doc.axes:
             if axis.name in self.designLocation:
                 result[axis.name] = self.designLocation[axis.name]
@@ -478,7 +476,14 @@ class AxisMappingDescriptor(SimpleDescriptor):
 
     _attrs = ["inputLocation", "outputLocation"]
 
-    def __init__(self, *, inputLocation=None, outputLocation=None):
+    def __init__(
+        self,
+        *,
+        inputLocation=None,
+        outputLocation=None,
+        description=None,
+        groupDescription=None,
+    ):
         self.inputLocation: SimpleLocationDict = inputLocation or {}
         """dict. Axis values for the input of the mapping, in design space coordinates.
 
@@ -492,6 +497,20 @@ class AxisMappingDescriptor(SimpleDescriptor):
         varLib.
 
         .. versionadded:: 5.1
+        """
+        self.description = description
+        """string. A description of the mapping.
+
+        varLib.
+
+        .. versionadded:: 5.2
+        """
+        self.groupDescription = groupDescription
+        """string. A description of the group of mappings.
+
+        varLib.
+
+        .. versionadded:: 5.2
         """
 
 
@@ -858,16 +877,19 @@ def tagForAxisName(name):
 
 
 class AbstractAxisDescriptor(SimpleDescriptor):
+    name: str | None
+    map: list[tuple[float, float]]
+
     flavor = "axis"
 
     def __init__(
         self,
         *,
         tag=None,
-        name=None,
+        name: str | None = None,
         labelNames=None,
         hidden=False,
-        map=None,
+        map: list[tuple[float, float]] | None = None,
         axisOrdering=None,
         axisLabels=None,
     ):
@@ -918,6 +940,31 @@ class AbstractAxisDescriptor(SimpleDescriptor):
         .. versionadded:: 5.0
         """
 
+    def get_validated_map(self) -> list[tuple[float, float]]:
+        """Return a new list with exact duplicate pairs collapsed.
+
+        The stored :attr:`map` is not modified.
+        Multiple distinct input coordinates may map to the same output;
+        duplicate outputs (many-to-one mappings) are valid.
+
+        This validates only ambiguity in the input coordinates: an input
+        coordinate mapping to different outputs raises
+        :class:`DesignSpaceDocumentError`. It does not validate axis endpoint
+        coverage or output monotonicity.
+        """
+        validated = {}
+        for input_value, output_value in self.map:
+            if input_value in validated:
+                previous_output = validated[input_value]
+                if previous_output != output_value:
+                    raise DesignSpaceDocumentError(
+                        f"Axis '{self.name}': mapping input value {input_value} "
+                        f"has conflicting outputs {previous_output} and {output_value}."
+                    )
+                continue
+            validated[input_value] = output_value
+        return list(validated.items())
+
 
 class AxisDescriptor(AbstractAxisDescriptor):
     """Simple container for the axis data.
@@ -957,13 +1004,13 @@ class AxisDescriptor(AbstractAxisDescriptor):
         self,
         *,
         tag=None,
-        name=None,
+        name: str | None = None,
         labelNames=None,
         minimum=None,
         default=None,
         maximum=None,
         hidden=False,
-        map=None,
+        map: list[tuple[float, float]] | None = None,
         axisOrdering=None,
         axisLabels=None,
     ):
@@ -1012,19 +1059,33 @@ class AxisDescriptor(AbstractAxisDescriptor):
         """Maps value from axis mapping's input (user) to output (design)."""
         from fontTools.varLib.models import piecewiseLinearMap
 
-        if not self.map:
+        axis_map = self.get_validated_map()
+        if not axis_map:
             return v
-        return piecewiseLinearMap(v, {k: v for k, v in self.map})
+        return piecewiseLinearMap(v, dict(axis_map))
 
     def map_backward(self, v):
         """Maps value from axis mapping's output (design) to input (user)."""
-        from fontTools.varLib.models import piecewiseLinearMap
-
         if isinstance(v, tuple):
             v = v[0]
-        if not self.map:
+        axis_map = self.get_validated_map()
+        if not axis_map:
             return v
-        return piecewiseLinearMap(v, {v: k for k, v in self.map})
+        # Build (design, user) pairs sorted by design then user, keeping
+        # both endpoints of any many-to-one (flat) segments so we can
+        # invert them and interpolation is correct on both sides.
+        # https://github.com/googlefonts/ufo2ft/issues/978
+        backward = sorted((design, user) for user, design in axis_map)
+        design0, user0 = backward[0]
+        if v <= design0:
+            return v + user0 - design0
+        for (design1, user1), (design2, user2) in zip(backward, backward[1:]):
+            if design1 <= v <= design2:
+                if design1 == design2:
+                    return user1
+                return user1 + (user2 - user1) * (v - design1) / (design2 - design1)
+        designN, userN = backward[-1]
+        return v + userN - designN
 
 
 class DiscreteAxisDescriptor(AbstractAxisDescriptor):
@@ -1064,12 +1125,12 @@ class DiscreteAxisDescriptor(AbstractAxisDescriptor):
         self,
         *,
         tag=None,
-        name=None,
+        name: str | None = None,
         labelNames=None,
         values=None,
         default=None,
         hidden=False,
-        map=None,
+        map: list[tuple[float, float]] | None = None,
         axisOrdering=None,
         axisLabels=None,
     ):
@@ -1106,7 +1167,7 @@ class DiscreteAxisDescriptor(AbstractAxisDescriptor):
         Note: for discrete axes, each value must have its mapping entry, if
         you intend that value to be mapped.
         """
-        return next((v for k, v in self.map if k == value), value)
+        return next((v for k, v in self.get_validated_map() if k == value), value)
 
     def map_backward(self, value):
         """Maps value from axis mapping's output to input.
@@ -1118,7 +1179,7 @@ class DiscreteAxisDescriptor(AbstractAxisDescriptor):
         """
         if isinstance(value, tuple):
             value = value[0]
-        return next((k for k, v in self.map if v == value), value)
+        return next((k for k, v in self.get_validated_map() if v == value), value)
 
 
 class AxisLabelDescriptor(SimpleDescriptor):
@@ -1303,6 +1364,11 @@ class VariableFontDescriptor(SimpleDescriptor):
         in the document**. The file may or may not exist.
 
         If not specified, the :attr:`name` will be used as a basename for the file.
+
+        .. note::
+            This is intended to be a simple filename (basename or stem) only.
+            Build tools will only use the basename component and ignore any
+            directory separators for security reasons.
         """
         self.axisSubsets: List[
             Union[RangeAxisSubsetDescriptor, ValueAxisSubsetDescriptor]
@@ -1415,18 +1481,27 @@ class BaseDocWriter(object):
         ):
             axesElement = ET.Element("axes")
             if self.documentObject.elidedFallbackName is not None:
-                axesElement.attrib[
-                    "elidedfallbackname"
-                ] = self.documentObject.elidedFallbackName
+                axesElement.attrib["elidedfallbackname"] = (
+                    self.documentObject.elidedFallbackName
+                )
             self.root.append(axesElement)
         for axisObject in self.documentObject.axes:
             self._addAxis(axisObject)
 
         if self.documentObject.axisMappings:
-            mappingsElement = ET.Element("mappings")
-            self.root.findall(".axes")[0].append(mappingsElement)
+            mappingsElement = None
+            lastGroup = object()
             for mappingObject in self.documentObject.axisMappings:
+                if getattr(mappingObject, "groupDescription", None) != lastGroup:
+                    if mappingsElement is not None:
+                        self.root.findall(".axes")[0].append(mappingsElement)
+                    lastGroup = getattr(mappingObject, "groupDescription", None)
+                    mappingsElement = ET.Element("mappings")
+                    if lastGroup is not None:
+                        mappingsElement.attrib["description"] = lastGroup
                 self._addAxisMapping(mappingsElement, mappingObject)
+            if mappingsElement is not None:
+                self.root.findall(".axes")[0].append(mappingsElement)
 
         if self.documentObject.locationLabels:
             labelsElement = ET.Element("labels")
@@ -1525,7 +1600,6 @@ class BaseDocWriter(object):
         return ("%f" % num).rstrip("0").rstrip(".")
 
     def _addRule(self, ruleObject):
-        # if none of the conditions have minimum or maximum values, do not add the rule.
         ruleElement = ET.Element("rule")
         if ruleObject.name is not None:
             ruleElement.attrib["name"] = ruleObject.name
@@ -1546,8 +1620,9 @@ class BaseDocWriter(object):
                         cond.get("maximum")
                     )
                 conditionsetElement.append(conditionElement)
-            if len(conditionsetElement):
-                ruleElement.append(conditionsetElement)
+            # Serialize the conditionset even if it is empty, as this is the
+            # canonical way of defining a rule that is always true.
+            ruleElement.append(conditionsetElement)
         for sub in ruleObject.subs:
             subElement = ET.Element("sub")
             subElement.attrib["name"] = sub[0]
@@ -1567,7 +1642,7 @@ class BaseDocWriter(object):
                 mapElement.attrib["input"] = self.intOrFloat(inputValue)
                 mapElement.attrib["output"] = self.intOrFloat(outputValue)
                 axisElement.append(mapElement)
-        if axisObject.axisOrdering or axisObject.axisLabels:
+        if axisObject.axisOrdering is not None or axisObject.axisLabels:
             labelsElement = ET.Element("labels")
             if axisObject.axisOrdering is not None:
                 labelsElement.attrib["ordering"] = str(axisObject.axisOrdering)
@@ -1588,6 +1663,8 @@ class BaseDocWriter(object):
 
     def _addAxisMapping(self, mappingsElement, mappingObject):
         mappingElement = ET.Element("mapping")
+        if getattr(mappingObject, "description", None) is not None:
+            mappingElement.attrib["description"] = mappingObject.description
         for what in ("inputLocation", "outputLocation"):
             whatObject = getattr(mappingObject, what, None)
             if whatObject is None:
@@ -1746,17 +1823,17 @@ class BaseDocWriter(object):
         if instanceObject.filename is not None:
             instanceElement.attrib["filename"] = instanceObject.filename
         if instanceObject.postScriptFontName is not None:
-            instanceElement.attrib[
-                "postscriptfontname"
-            ] = instanceObject.postScriptFontName
+            instanceElement.attrib["postscriptfontname"] = (
+                instanceObject.postScriptFontName
+            )
         if instanceObject.styleMapFamilyName is not None:
-            instanceElement.attrib[
-                "stylemapfamilyname"
-            ] = instanceObject.styleMapFamilyName
+            instanceElement.attrib["stylemapfamilyname"] = (
+                instanceObject.styleMapFamilyName
+            )
         if instanceObject.styleMapStyleName is not None:
-            instanceElement.attrib[
-                "stylemapstylename"
-            ] = instanceObject.styleMapStyleName
+            instanceElement.attrib["stylemapstylename"] = (
+                instanceObject.styleMapStyleName
+            )
         if self.effectiveFormatTuple < (5, 0):
             # Deprecated members as of version 5.0
             if instanceObject.glyphs:
@@ -1943,7 +2020,7 @@ class BaseDocReader(LogMixin):
     def __init__(self, documentPath, documentObject):
         self.path = documentPath
         self.documentObject = documentObject
-        tree = ET.parse(self.path)
+        tree = ET.parse(self.path, parser=ET.XMLParser())
         self.root = tree.getroot()
         self.documentObject.formatVersion = self.root.attrib.get("format", "3.0")
         self._axes = []
@@ -2083,10 +2160,11 @@ class BaseDocReader(LogMixin):
             self.documentObject.axes.append(axisObject)
             self.axisDefaults[axisObject.name] = axisObject.default
 
-        mappingsElement = self.root.find(".axes/mappings")
         self.documentObject.axisMappings = []
-        if mappingsElement is not None:
+        for mappingsElement in self.root.findall(".axes/mappings"):
+            groupDescription = mappingsElement.attrib.get("description")
             for mappingElement in mappingsElement.findall("mapping"):
+                description = mappingElement.attrib.get("description")
                 inputElement = mappingElement.find("input")
                 outputElement = mappingElement.find("output")
                 inputLoc = {}
@@ -2100,7 +2178,10 @@ class BaseDocReader(LogMixin):
                     value = float(dimElement.attrib["xvalue"])
                     outputLoc[name] = value
                 axisMappingObject = self.axisMappingDescriptorClass(
-                    inputLocation=inputLoc, outputLocation=outputLoc
+                    inputLocation=inputLoc,
+                    outputLocation=outputLoc,
+                    description=description,
+                    groupDescription=groupDescription,
                 )
                 self.documentObject.axisMappings.append(axisMappingObject)
 
@@ -2506,6 +2587,9 @@ class BaseDocReader(LogMixin):
 
     def readLibElement(self, libElement, instanceObject):
         """Read the lib element for the given instance."""
+        if len(libElement) == 0:
+            # an empty <lib> element is equivalent to no lib at all
+            return
         instanceObject.lib = plistlib.fromtree(libElement[0])
 
     def readInfoElement(self, infoElement, instanceObject):
@@ -2583,6 +2667,9 @@ class BaseDocReader(LogMixin):
     def readLib(self):
         """Read the lib element for the whole document."""
         for libElement in self.root.findall(".lib"):
+            if len(libElement) == 0:
+                # an empty <lib> element is equivalent to no lib at all
+                continue
             self.documentObject.lib = plistlib.fromtree(libElement[0])
 
 
@@ -3281,3 +3368,23 @@ class DesignSpaceDocument(LogMixin, AsDictMixin):
         finally:
             for source, font in zip(self.sources, fonts):
                 source.font = font
+
+
+def main(args=None):
+    """Roundtrip .designspace file through the DesignSpaceDocument class"""
+
+    if args is None:
+        import sys
+
+        args = sys.argv[1:]
+
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser(prog="designspaceLib", description=main.__doc__)
+    parser.add_argument("input")
+    parser.add_argument("output")
+
+    options = parser.parse_args(args)
+
+    ds = DesignSpaceDocument.fromfile(options.input)
+    ds.write(options.output)
